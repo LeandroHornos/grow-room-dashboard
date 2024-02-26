@@ -16,18 +16,12 @@ app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 # DATA LOADING FROM CSV FILE
 # ------------------------------------------------------------------------
 path='./data'
-file='sample_greenhouse_data.csv'
+file='sample_greenhouse_data_clean.csv'
 
-df = pd.read_csv(f'{path}/{file}', sep=';')
-df.rename(columns=lambda x: x.replace('_', ' '), inplace=True)
-# Data wrangling
-df = df.map(lambda x: str(x).replace(',', '.') if ',' in str(x) else x)
+df = pd.read_csv(f'{path}/{file}')
+df['datetime'] = pd.to_datetime(df['datetime'])
 
-# Convertir las columnas que necesitan ser numéricas al tipo correcto
-# Aquí asumimos que todas las columnas excepto la primera son numéricas
-df.iloc[:, 1:-1] = df.iloc[:, 1:-1].astype(float)
-df['datetime'] = pd.to_datetime(df['created'])
-
+print(df.columns)
 
 # FILTRO POR FECHA
 
@@ -97,8 +91,16 @@ co2_vs_dt = px.line(df_filtrado, x="datetime",
                    )
 co2_vs_dt.update_yaxes(tickformat='.2f', showgrid=True)
 
-# Sample Gauge
+# GAUGES
+# -------------------------------------------------------------------------------
 
+# Config
+bar = '#746c7a'
+good = 'PaleGreen'
+warning = '#faea5f'
+danger = 'Salmon'
+
+# Plots
 gauge_temp = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = 25,
@@ -106,14 +108,14 @@ gauge_temp = go.Figure(go.Indicator(
     title = {'text': "Temperature"},
     gauge = {
             'axis': {'range': [None, 50], 'tickwidth': 1, 'tickcolor': "darkblue"},
-            'bar': {'color': "darkblue"},
+            'bar': {'color': bar},
             'bgcolor': "white",
             'borderwidth': 2,
             'bordercolor': "gray",
             'steps': [
-                {'range': [0, 27], 'color': 'green'},
-                {'range': [27, 35], 'color': 'yellow'},
-                {'range': [35, 50], 'color': 'red'},],
+                {'range': [0, 27], 'color': good},
+                {'range': [27, 35], 'color': warning},
+                {'range': [35, 50], 'color': danger},],
             'threshold': {
                 'line': {'color': "red", 'width': 4},
                 'thickness': 0.75,
@@ -127,14 +129,14 @@ gauge_hum = go.Figure(go.Indicator(
     title = {'text': "Humidity [%]"},
     gauge = {
             'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "darkblue"},
-            'bar': {'color': "darkblue"},
+            'bar': {'color': bar},
             'bgcolor': "white",
             'borderwidth': 2,
             'bordercolor': "gray",
             'steps': [
-                {'range': [0, 40], 'color': 'green'},
-                {'range': [40, 70], 'color': 'yellow'},
-                {'range': [70, 100], 'color': 'red'},],
+                {'range': [0, 40], 'color': good},
+                {'range': [40, 70], 'color': warning},
+                {'range': [70, 100], 'color': danger},],
             'threshold': {
                 'line': {'color': "red", 'width': 4},
                 'thickness': 0.75,
@@ -148,14 +150,14 @@ gauge_co2 = go.Figure(go.Indicator(
     title = {'text': "CO2 [ppm]"},
     gauge = {
         'axis': {'range': [None, 2000], 'tickwidth': 1, 'tickcolor': "darkblue"},
-        'bar': {'color': "darkblue"},
+        'bar': {'color': bar},
         'bgcolor': "white",
         'borderwidth': 2,
         'bordercolor': "gray",
         'steps': [
-            {'range': [0, 500], 'color': 'green'},
-            {'range': [500, 1000], 'color': 'yellow'},
-            {'range': [1000, 2000], 'color': 'red'},],
+            {'range': [0, 500], 'color': good},
+            {'range': [500, 1000], 'color': warning},
+            {'range': [1000, 2000], 'color': danger},],
         'threshold': {
             'line': {'color': "red", 'width': 4},
             'thickness': 0.75,
@@ -167,7 +169,7 @@ gauge_co2 = go.Figure(go.Indicator(
 # App layout
 # ------------------------------------------------------------------------
 app.layout = dbc.Container([
-    html.H1('GROW ROOM CONTROL PANEL', className='text-center'),
+    html.H1('GROW ROOM CONTROL PANEL', className='text-center mt-2 mb-2'),
     html.Div([
         html.Div([dcc.Graph(figure=gauge_temp)], className="col-lg-4"),
         html.Div([dcc.Graph(figure=gauge_hum)], className="col-lg-4"),
