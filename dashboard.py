@@ -51,9 +51,9 @@ df_filtrado = df[(df['datetime'] >= fecha_inicial) & (df['datetime'] <= fecha_fi
 
 columns=[]
 for col in df.columns:
-    print(f'{col}:{df[col].dtype}')
+    # print(f'{col}:{df[col].dtype}')
     if df[col].dtype == 'float':
-        print(col)
+        # print(col)
         item = dict(id=col, name=col, type='numeric', format=dict(specifier=',.2f'))  # Example result 47,359.02
         columns.append(item)
     else:
