@@ -1,8 +1,9 @@
 # GENERAL
 import pandas as pd
+from datetime import date
 
 # DASH
-from dash import Dash, html, dash_table, dcc
+from dash import Dash, dcc, html, Input, dash_table,Output, callback
 import dash_bootstrap_components as dbc
 
 # PLOTLY
@@ -32,7 +33,7 @@ fecha_hora_max = df['datetime'].max()
 
 print("Fecha y hora mínima:", fecha_hora_min)
 print("Fecha y hora máxima:", fecha_hora_max)
-
+print(fecha_hora_min.date())
 
 fecha_inicial = '2021-03-03'
 fecha_final = fecha_hora_max
@@ -170,17 +171,48 @@ gauge_co2 = go.Figure(go.Indicator(
 # ------------------------------------------------------------------------
 app.layout = dbc.Container([
     html.H1('GROW ROOM CONTROL PANEL', className='text-center mt-2 mb-2'),
+    html.H2('CURRENT STATUS', className=''),
     html.Div([
         html.Div([dcc.Graph(figure=gauge_temp)], className="col-lg-4"),
         html.Div([dcc.Graph(figure=gauge_hum)], className="col-lg-4"),
         html.Div([dcc.Graph(figure=gauge_co2)], className="col-lg-4")
              ], className="row"),
-    html.Div([dcc.Graph(figure=t_vs_dt)]),
+    html.H2('HISTORY', className=''),
+    dcc.DatePickerRange(
+        id='my-date-picker-range',
+        display_format='MMM Do, YY',
+        start_date_placeholder_text='MMM Do, YY',
+        min_date_allowed=fecha_hora_min.date(),
+        max_date_allowed=fecha_hora_max.date(),
+        initial_visible_month=fecha_hora_min.date(),
+        start_date=fecha_hora_min.date(),
+        end_date=fecha_hora_max.date()
+    ),
+    html.Div([dcc.Graph(figure={}, id='temp-history-lineplot')]),
     html.Div([dcc.Graph(figure=h_vs_dt)]),
     html.Div([dcc.Graph(figure=co2_vs_dt)]),
+    html.H2('RAW DATA TABLE', className=''),
     html.Div([dash_table.DataTable(data=df.to_dict('records'), columns=columns, page_size=10, style_cell={'whiteSpace':'normal','height':'auto'})]),
 ])
 
+# CALLBACKS
+
+@callback(
+    Output(component_id='temp-history-lineplot', component_property='figure'),
+    Input('my-date-picker-range', 'start_date'),
+    Input('my-date-picker-range', 'end_date')
+)
+def update_output(start_date, end_date):
+    # Filtrar el DataFrame para quedarte solo con las filas dentro del rango de fechas
+    print(f'Min date {start_date} Max date {end_date}')
+    df_filt = df[(df['datetime'] >= start_date) & (df['datetime'] <= end_date)]
+    fig = px.line(df_filt, x="datetime",
+                  y="online temperature celsius",
+                  title='Temperature [°C]',
+                  color_discrete_sequence=px.colors.qualitative.D3
+                 )
+    fig.update_yaxes(tickformat='.2f', showgrid=True)
+    return fig
 # Run the app
 if __name__ == '__main__':
     app.run(debug=True)
