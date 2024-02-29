@@ -215,4 +215,4 @@ def update_output(start_date, end_date):
     return fig
 # Run the app
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
